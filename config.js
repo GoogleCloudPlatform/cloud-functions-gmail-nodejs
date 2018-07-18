@@ -21,15 +21,13 @@ nconf.argv()
 
 // Configuration constants
 const GCF_REGION = nconf.get('GCF_REGION');
-const GCLOUD_PROJECT = nconf.get('GCLOUD_PROJECT_ID');
+const GCLOUD_PROJECT = nconf.get('GCLOUD_PROJECT');
 const TOPIC_ID = nconf.get('PUBSUB_TOPIC');
 
 // Computed values
-exports = {
-  GCF_BASE_URL: `https://${GCF_REGION}-${GCLOUD_PROJECT}.cloudfunctions.net`,
-  TOPIC_NAME: `projects/${GCLOUD_PROJECT}/topics/${TOPIC_ID}`,
-  GCF_REGION: GCF_REGION
-};
+exports.GCF_BASE_URL = `https://${GCF_REGION}-${GCLOUD_PROJECT}.cloudfunctions.net`;
+exports.TOPIC_NAME = `projects/${GCLOUD_PROJECT}/topics/${TOPIC_ID}`;
+exports.GCF_REGION = GCF_REGION;
 
 // Constants
 exports.NO_LABEL_MATCH = `Message doesn't match label`;
