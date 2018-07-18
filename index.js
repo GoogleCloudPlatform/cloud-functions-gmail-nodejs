@@ -84,10 +84,10 @@ exports.oauth2callback = (req, res) => {
  */
 exports.initWatch = (req, res) => {
   // Require a valid email address
-  if (!req.query.email) {
+  if (!req.query.emailAddress) {
     return res.status(400).send('No emailAddress specified.');
   }
-  const email = querystring.unescape(req.query.email);
+  const email = querystring.unescape(req.query.emailAddress);
   if (!email.includes('@')) {
     return res.status(400).send('Invalid emailAddress.');
   }

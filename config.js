@@ -15,14 +15,13 @@
 
 const nconf = require(`nconf`);
 
-nconf.argv()
-  .env()
+nconf.env()
   .file({ file: 'config.json' });
 
 // Configuration constants
 const GCF_REGION = nconf.get('GCF_REGION');
 const GCLOUD_PROJECT = nconf.get('GCLOUD_PROJECT');
-const TOPIC_ID = nconf.get('PUBSUB_TOPIC');
+const TOPIC_ID = nconf.get('TOPIC_ID');
 
 // Computed values
 exports.GCF_BASE_URL = `https://${GCF_REGION}-${GCLOUD_PROJECT}.cloudfunctions.net`;
