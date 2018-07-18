@@ -1,5 +1,5 @@
 /**
- * Copyright 2018, Google, Inc.
+ * Copyright 2018, Google LLC
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,95 +15,13 @@
 
 'use strict';
 
-const fs = require('fs');
 const google = require('googleapis');
 const gmail = google.gmail('v1');
-const cheerio = require(`cheerio`);
 const querystring = require(`querystring`);
-
-const Datastore = require('@google-cloud/datastore');
-const datastore = new Datastore();
-
-const Vision = require('@google-cloud/vision');
-const visionClient = new Vision.ImageAnnotatorClient();
-
 const pify = require('pify');
-
-const DebugAgent = require('@google-cloud/debug-agent');
-DebugAgent.start();
-
-// Configuration constants
-// TODO(developer): update these values
-const GCF_REGION = 'YOUR_GCF_REGION';
-const GCLOUD_PROJECT = 'YOUR_GCLOUD_PROJECT_ID';
-
-// Computed values
-const GCF_BASE_URL = `https://${GCF_REGION}-${GCLOUD_PROJECT}.cloudfunctions.net`;
-const TOPIC_NAME = `projects/${GCLOUD_PROJECT}/topics/anassri-gmail-test`;
-
-// Retrieve OAuth2 config
-const clientSecretJson = JSON.parse(fs.readFileSync('./client_secret.json'));
-const oauth2Client = new google.auth.OAuth2(
-  clientSecretJson.web.client_id,
-  clientSecretJson.web.client_secret,
-  `${GCF_BASE_URL}/oauth2callback`
-);
-
-/**
- * Helper function to get the current user's email address
- */
-const getEmailAddress = (t) => {
-  return pify(gmail.users.getProfile)({
-    auth: oauth2Client,
-    userId: 'me'
-  }).then(x => x.emailAddress);
-};
-
-/**
- * Helper function to fetch a user's OAuth 2.0 access token
- * Can fetch current tokens from Datastore, or create new ones
- */
-const UNKNOWN_USER_MESSAGE = 'Uninitialized email address';
-const fetchToken = (emailAddress) => {
-  return datastore.get(datastore.key(['oauth2Token', emailAddress]))
-    .then((tokens) => {
-      const token = tokens[0];
-
-      // Check for new users
-      if (!token) {
-        throw new Error(UNKNOWN_USER_MESSAGE);
-      }
-
-      // Validate token
-      if (!token.expiry_date || token.expiry_date < Date.now() + 60000) {
-        oauth2Client.credentials.refresh_token = oauth2Client.credentials.refresh_token || token.refresh_token;
-        return new Promise((resolve, reject) => { // Pify and oauth2client don't mix
-          oauth2Client.refreshAccessToken((err, response) => {
-            if (err) {
-              return reject(err);
-            }
-            return resolve();
-          });
-        })
-          .then(() => {
-            return saveToken(emailAddress);
-          });
-      } else {
-        oauth2Client.credentials = token;
-        return Promise.resolve();
-      }
-    });
-};
-
-/**
- * Helper function to save an OAuth 2.0 access token to Datastore
- */
-const saveToken = (emailAddress) => {
-  return datastore.save({
-    key: datastore.key(['oauth2Token', emailAddress]),
-    data: oauth2Client.credentials
-  });
-};
+const config = require('./config');
+const oauth = require('./lib/oauth');
+const helpers = require('./lib/helpers');
 
 /**
  * Request an OAuth 2.0 authorization code
@@ -117,7 +35,7 @@ exports.oauth2init = (req, res) => {
   ];
 
   // Generate + redirect to OAuth2 consent form URL
-  const authUrl = oauth2Client.generateAuthUrl({
+  const authUrl = oauth.client.generateAuthUrl({
     access_type: 'offline',
     scope: scopes,
     prompt: 'consent' // Required in order to receive a refresh token every time
@@ -134,20 +52,20 @@ exports.oauth2callback = (req, res) => {
 
   // OAuth2: Exchange authorization code for access token
   return new Promise((resolve, reject) => {
-    oauth2Client.getToken(code, (err, token) =>
+    oauth.client.getToken(code, (err, token) =>
       (err ? reject(err) : resolve(token))
     );
   })
     .then((token) => {
       // Get user email (to use as a Datastore key)
-      oauth2Client.credentials = token;
-      return Promise.all([token, getEmailAddress()]);
+      oauth.client.credentials = token;
+      return Promise.all([token, oauth.getEmailAddress()]);
     })
     .then(([token, emailAddress]) => {
       // Store token in Datastore
       return Promise.all([
         emailAddress,
-        saveToken(emailAddress)
+        oauth.saveToken(emailAddress)
       ]);
     })
     .then(([emailAddress]) => {
@@ -175,15 +93,15 @@ exports.initWatch = (req, res) => {
   }
 
   // Retrieve the stored OAuth 2.0 access token
-  return fetchToken(email)
+  return oauth.fetchToken(email)
     .then(() => {
       // Initialize a watch
       return pify(gmail.users.watch)({
-        auth: oauth2Client,
+        auth: oauth.client,
         userId: 'me',
         resource: {
           labelIds: ['INBOX'],
-          topicName: TOPIC_NAME
+          topicName: config.TOPIC_NAME
         }
       });
     })
@@ -194,7 +112,7 @@ exports.initWatch = (req, res) => {
     })
     .catch((err) => {
       // Handle errors
-      if (err.message === UNKNOWN_USER_MESSAGE) {
+      if (err.message === config.UNKNOWN_USER_MESSAGE) {
         res.redirect('/oauth2init');
       } else {
         console.error(err);
@@ -204,155 +122,28 @@ exports.initWatch = (req, res) => {
 };
 
 /**
- * Get base64-encoded image attachments in a GMail message
- * @param message The GMail message to extract images from
- * @returns A promise containing a list of base64-encoded images
- */
-const getImageAttachments = (message) => {
-  // Get attachment data
-  const attachmentIds = message.payload.parts
-    .filter(x => x.mimeType && x.mimeType.includes('image'))
-    .map(x => x.body.attachmentId);
-
-  // Return base64-encoded images
-  return Promise.all(attachmentIds.map(attachmentId => {
-    return pify(gmail.users.messages.attachments.get)({
-      auth: oauth2Client,
-      userId: 'me',
-      id: attachmentId,
-      messageId: message.id
-    }).then(result => {
-      // Convert from base64url to base64
-      const imageData = result.data.replace(/-/g, '+').replace(/_/g, '/');
-      return Buffer.from(imageData, 'base64');
-    });
-  }));
-};
-
-/**
- * Get URL-referenced images in a GMail message
- * @param message The GMail message to extract images from
- * @returns A list of image URLs
- */
-const getImageUrls = (message) => {
-  const unpack = (x) => {
-    return Buffer.from(x.body.data || '', 'base64').toString();
-  };
-
-  // Get message's HTML
-  let rawHtml = message.payload.parts.map(
-    p => unpack(p)
-  ).join('');
-  rawHtml += unpack(message.payload);
-
-  // Return image URLs
-  return cheerio.load(rawHtml)('img')
-    .toArray()
-    .map(image => image.attribs.src);
-};
-
-/**
- * Get all images from a GMail message
- * @param message The GMail message to extract images from
- * @returns A promise containing a list of {image URLs, base64-encoded images}
- */
-const getAllImages = (msg) => {
-  const urlImages = getImageUrls(msg);
-  const base64Images = getImageAttachments(msg);
-  return Promise.all([urlImages, base64Images])
-    .then(([urlImages, base64Images]) => urlImages.concat(base64Images));
-};
-
-/**
- * List GMail message IDs
- * @returns A promise containing a list of GMail message IDs
- */
-const listMessageIds = () => {
-  return pify(gmail.users.messages.list)(
-    { auth: oauth2Client, userId: 'me' }
-  );
-};
-
-/**
- * Get a GMail message given a message ID
- * @param messageId The ID of the message to get
- * @returns A promise containing the specified GMail message
- */
-const getMessageById = (messageId) => {
-  return pify(gmail.users.messages.get)({
-    auth: oauth2Client,
-    id: messageId,
-    userId: 'me'
-  });
-};
-
-/**
- * Label a GMail message
- * @param messageId The ID of the message to label
- * @param labels The labels to apply to the message
- */
-const labelMessage = (messageId, labels) => {
-  return pify(gmail.users.messages.modify)({
-    auth: oauth2Client,
-    id: messageId,
-    userId: 'me',
-    resource: {
-      addLabelIds: labels
-    }
-  });
-};
-
-/**
- * Get labels for a series of images
- * @param images A list of {base64-encoded images, image URLs} to label
- * @param returns A flattened list of labels for the specified images
- */
-const getLabelsForImages = (images) => {
-  // Get labels for each images
-  const requests = images.map(image => visionClient.labelDetection(image));
-
-  return Promise.all(requests)
-    .then(results => {
-      // Propagate request errors (to be caught elsewhere)
-      if (results[0].error) {
-        throw new Error(results[0].error);
-      }
-
-      // Map to label array-of-arrays
-      return results.map(result =>
-        result[0].labelAnnotations.map(label => label.description)
-      );
-    })
-    .then(labelSet => {
-      // Flatten labelSet
-      return labelSet.reduce((x, y) => x.concat(y), []);
-    });
-};
-
-/**
 * Process new messages as they are received
 */
-const NO_LABEL_MATCH = `Message doesn't match label`;
 exports.onNewMessage = (event) => {
   // Parse the Pub/Sub message
   const dataStr = Buffer.from(event.data.data, 'base64').toString('ascii');
   const dataObj = JSON.parse(dataStr);
 
-  return fetchToken(dataObj.emailAddress)
-    .then(listMessageIds)
-    .then(res => getMessageById(res.messages[0].id)) // Most recent message
-    .then(msg => Promise.all([msg, getAllImages(msg)]))
-    .then(([msg, images]) => Promise.all([msg, getLabelsForImages(images)]))
+  return oauth.fetchToken(dataObj.emailAddress)
+    .then(helpers.listMessageIds)
+    .then(res => helpers.getMessageById(res.messages[0].id)) // Most recent message
+    .then(msg => Promise.all([msg, helpers.getAllImages(msg)]))
+    .then(([msg, images]) => Promise.all([msg, helpers.getImageLabels(images)]))
     .then(([msg, labels]) => {
       if (!labels.includes('bird')) {
-        throw new Error(NO_LABEL_MATCH); // Exit promise chain
+        throw new Error(config.NO_LABEL_MATCH); // Exit promise chain
       }
 
-      return labelMessage(msg.id, ['STARRED']);
+      return helpers.labelMessage(msg.id, ['STARRED']);
     })
     .catch((err) => {
       // Handle unexpected errors
-      if (!err.message || err.message !== NO_LABEL_MATCH) {
+      if (!err.message || err.message !== config.NO_LABEL_MATCH) {
         console.error(err);
       }
     });
