@@ -29,9 +29,8 @@ machine.
 ## Configuring local files
 1.    Rename your __Client Secret file__ to `client_secret.json`, and move it to
     the directory that contains your `index.js` and `package.json` files.
-
-1.    Add values for `GCF_REGION`, `GCLOUD_PROJECT`, and `TOPIC_ID` to
-    `config.js`.
+1.    In `config.json`, update the values for `GCF_REGION`, `GCLOUD_PROJECT`,
+    and `TOPIC_ID`.
 
 
 [gmail]: https://developers.google.com/gmail/api

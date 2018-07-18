@@ -13,11 +13,16 @@
  * limitations under the License.
  */
 
+const nconf = require(`nconf`);
+
+nconf.argv()
+  .env()
+  .file({ file: 'config.json' });
+
 // Configuration constants
-// TODO(developer): update these values
-const GCF_REGION = 'YOUR_GCF_REGION';
-const GCLOUD_PROJECT = 'YOUR_GCLOUD_PROJECT_ID';
-const TOPIC_ID = 'YOUR_PUBSUB_TOPIC';
+const GCF_REGION = nconf.get('GCF_REGION');
+const GCLOUD_PROJECT = nconf.get('GCLOUD_PROJECT_ID');
+const TOPIC_ID = nconf.get('PUBSUB_TOPIC');
 
 // Computed values
 exports = {
