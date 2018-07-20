@@ -32,6 +32,8 @@ machine.
 1.    In `config.json`, update the values for `GCF_REGION`, `GCLOUD_PROJECT`,
     and `TOPIC_ID`.
 
-
+[docs_regions]: http://cloud.google.com/functions/docs/locations
+[console_gmail]: http://console.cloud.google.com/flows/enableApi?apiid=gmail.googleapis.com
+[console_credentials]: https://console.cloud.google.com/apis/credentials
 [gmail]: https://developers.google.com/gmail/api
 [gcf]: https://cloud.google.com/functions
