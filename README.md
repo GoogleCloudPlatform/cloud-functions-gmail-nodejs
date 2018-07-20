@@ -8,9 +8,7 @@ an _OAuth 2.0 client ID_ with some of our requests to the API. The following
 steps show how to enable the Gmail API and download the client ID to your local
 machine.
 
-1.  Enable the Gmail API by [visiting the _Enable an API_ page in the GCP Console][console_gmail]
-    (under **APIs** > **Enable APIs and Services**) and selecting the appropriate
-    GCP Project.
+1.  Enable the Gmail API using the [the GMail API page in the GCP Console][console_gmail].
 1.  Find the [GCP region][docs_regions] you want to deploy your function to.
     (In general, response time is quickest for the regions closest to you.) For
     the rest of this tutorial, replace `[YOUR_GCF_REGION]` with your selected
@@ -33,7 +31,7 @@ machine.
     and `TOPIC_ID`.
 
 [docs_regions]: http://cloud.google.com/functions/docs/locations
-[console_gmail]: http://console.cloud.google.com/flows/enableApi?apiid=gmail.googleapis.com
+[console_gmail]: http://console.cloud.google.com/apis/api/gmail.googleapis.com/overview
 [console_credentials]: https://console.cloud.google.com/apis/credentials
 [gmail]: https://developers.google.com/gmail/api
 [gcf]: https://cloud.google.com/functions
