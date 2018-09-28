@@ -1,6 +1,6 @@
 # Gmail + GCF intelligence demo
 
-This repository demonstrates how to write custom mail processing logic for Gmail using the [Gmail API][gmail] and [Cloud Functions][gcf]
+This repository demonstrates how to write custom mail processing logic for Gmail using the [Gmail API][gmail] and [Cloud Functions][gcf]. See the [blog post][blog] for more information.
 
 ## Obtaining an OAuth 2.0 Client ID
 In order for an OAuth 2.0 API to verify our program's identity, we must include
@@ -30,6 +30,7 @@ machine.
 1.    In `config.json`, update the values for `GCF_REGION`, `GCLOUD_PROJECT`,
     and `TOPIC_ID`.
 
+[blog]: https://cloud.google.com/blog/products/application-development/adding-custom-intelligence-to-gmail-with-serverless-on-gcp
 [docs_regions]: http://cloud.google.com/functions/docs/locations
 [console_gmail]: http://console.cloud.google.com/apis/api/gmail.googleapis.com/overview
 [console_credentials]: https://console.cloud.google.com/apis/credentials
