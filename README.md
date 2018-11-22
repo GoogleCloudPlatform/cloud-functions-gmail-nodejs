@@ -36,3 +36,6 @@ machine.
 [console_credentials]: https://console.cloud.google.com/apis/credentials
 [gmail]: https://developers.google.com/gmail/api
 [gcf]: https://cloud.google.com/functions
+
+## Provide permissions  
+Add gmail-api-push@system.gserviceaccount.com as PubSub Administrator to enable gmail to write messages to PubSub topic.
