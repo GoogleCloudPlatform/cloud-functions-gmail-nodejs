@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@google-cloud/datastore": "^1.4.0",
-    "@google-cloud/debug-agent": "^2.3.0",
+    "@google-cloud/debug-agent": "^4.0.0",
     "@google-cloud/vision": "^0.19.0",
     "cheerio": "^1.0.0-rc.2",
     "googleapis": "^23.0.0",
