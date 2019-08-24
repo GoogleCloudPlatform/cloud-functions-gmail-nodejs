@@ -28,5 +28,8 @@
   "devDependencies": {
     "mocha": "^6.2.0",
     "semistandard": "^14.0.1"
+  },
+  "semistandard": {
+    "env": [ "mocha" ]
   }
 }

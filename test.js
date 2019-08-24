@@ -21,4 +21,4 @@ describe('cloud functions gmail', () => {
   it('should have tests', () => {
     assert.ok(true);
   });
-})
+});
