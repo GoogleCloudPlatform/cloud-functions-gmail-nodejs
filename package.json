@@ -13,7 +13,8 @@
   },
   "scripts": {
     "fix": "semistandard --fix",
-    "lint": "semistandard"
+    "lint": "semistandard",
+    "test": "mocha"
   },
   "dependencies": {
     "@google-cloud/datastore": "^1.4.0",
@@ -25,6 +26,10 @@
     "pify": "^3.0.0"
   },
   "devDependencies": {
+    "mocha": "^6.2.0",
     "semistandard": "^14.0.1"
+  },
+  "semistandard": {
+    "env": [ "mocha" ]
   }
 }
