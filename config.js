@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-const nconf = require(`nconf`);
+const nconf = require('nconf');
 
 nconf.env()
   .file({ file: 'config.json' });
@@ -29,5 +29,5 @@ exports.TOPIC_NAME = `projects/${GCLOUD_PROJECT}/topics/${TOPIC_ID}`;
 exports.GCF_REGION = GCF_REGION;
 
 // Constants
-exports.NO_LABEL_MATCH = `Message doesn't match label`;
+exports.NO_LABEL_MATCH = 'Message doesn\'t match label';
 exports.UNKNOWN_USER_MESSAGE = 'Uninitialized email address';

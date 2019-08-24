@@ -17,7 +17,7 @@
 
 const google = require('googleapis');
 const gmail = google.gmail('v1');
-const querystring = require(`querystring`);
+const querystring = require('querystring');
 const pify = require('pify');
 const config = require('./config');
 const oauth = require('./lib/oauth');
@@ -107,7 +107,7 @@ exports.initWatch = (req, res) => {
     })
     .then(() => {
       // Respond with status
-      res.write(`Watch initialized!`);
+      res.write('Watch initialized!');
       res.status(200).end();
     })
     .catch((err) => {
