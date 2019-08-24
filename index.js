@@ -18,15 +18,13 @@
 const google = require('googleapis');
 const gmail = google.gmail('v1');
 const querystring = require('querystring');
-const pify = require('pify');
 const config = require('./config');
 const oauth = require('./lib/oauth');
 const helpers = require('./lib/helpers');
 
 /**
- * Request an OAuth 2.0 authorization code
- * Only new users (or those who want to refresh
- * their auth data) need visit this page
+ * Request an OAuth 2.0 authorization code. Only new users (or those who want
+ * to refresh their auth data) need visit this page
  */
 exports.oauth2init = (req, res) => {
   // Define OAuth2 scopes
@@ -96,10 +94,10 @@ exports.initWatch = (req, res) => {
   return oauth.fetchToken(email)
     .then(() => {
       // Initialize a watch
-      return pify(gmail.users.watch)({
+      return gmail.users.watch({
         auth: oauth.client,
         userId: 'me',
-        resource: {
+        requestBody: {
           labelIds: ['INBOX'],
           topicName: config.TOPIC_NAME
         }
