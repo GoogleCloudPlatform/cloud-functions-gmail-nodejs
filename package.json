@@ -21,7 +21,7 @@
     "@google-cloud/debug-agent": "^4.0.0",
     "@google-cloud/vision": "^1.0.0",
     "cheerio": "^1.0.0-rc.2",
-    "googleapis": "^45.0.0",
+    "googleapis": "^59.0.0",
     "nconf": "^0.10.0",
     "pify": "^4.0.0"
   },
