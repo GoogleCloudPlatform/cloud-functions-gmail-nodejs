@@ -126,7 +126,7 @@ exports.initWatch = (req, res) => {
 */
 exports.onNewMessage = (event) => {
   // Parse the Pub/Sub message
-  const dataStr = Buffer.from(event.data.data, 'base64').toString('ascii');
+  const dataStr = Buffer.from(event.data, 'base64').toString('ascii');
   const dataObj = JSON.parse(dataStr);
 
   return oauth.fetchToken(dataObj.emailAddress)
