@@ -26,8 +26,8 @@
     "pify": "^4.0.0"
   },
   "devDependencies": {
-    "mocha": "^8.0.0",
-    "semistandard": "^14.0.1"
+    "mocha": "^11.7.6",
+    "semistandard": "^17.0.0"
   },
   "semistandard": {
     "env": [ "mocha" ]
